@@ -1,0 +1,45 @@
+---
+archives:
+  - format: zip
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - binary: '{{ .ProjectName }}_v{{ .Version }}'
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - '-trimpath'
+    goarch:
+      - '386'
+      - amd64
+      - arm
+      - arm64
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - windows
+    ignore:
+      - goarch: '386'
+        goos: darwin
+    ldflags:
+      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
+    mod_timestamp: '{{ .CommitTimestamp }}'
+changelog:
+  skip: true
+checksum:
+  algorithm: sha256
+  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+release: null
+signs:
+  - args:
+      - '--batch'
+      - '--local-user'
+      - '{{ .Env.GPG_FINGERPRINT }}'
+      - '--output'
+      - ${signature}
+      - '--detach-sign'
+      - ${artifact}
+    artifacts: checksum
