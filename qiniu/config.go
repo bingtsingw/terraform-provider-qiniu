@@ -1,6 +1,7 @@
 package qiniu
 
 import (
+	"github.com/bingtsingw/terraform-provider-qiniu/qiniu/sdk/cert"
 	"github.com/qiniu/go-sdk/v7/auth"
 	"github.com/qiniu/go-sdk/v7/storage"
 )
@@ -15,6 +16,7 @@ func (c *Config) Client() Client {
 
 	client := Client{
 		bucketconn: storage.NewBucketManager(credentials, nil),
+		certconn:   cert.NewCertManager(credentials),
 	}
 
 	return client
