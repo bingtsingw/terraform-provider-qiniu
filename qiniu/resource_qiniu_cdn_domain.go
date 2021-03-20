@@ -49,7 +49,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 				ForceNew:     false,
 				ValidateFunc: validation.StringInSlice([]string{"http", "https"}, false),
 			},
-			"https": &schema.Schema{
+			"https": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				MaxItems: 1,
@@ -70,7 +70,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 					},
 				},
 			},
-			"source": &schema.Schema{
+			"source": {
 				Type:     schema.TypeSet,
 				Required: true,
 				MinItems: 1,
@@ -113,7 +113,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 					},
 				},
 			},
-			"cache": &schema.Schema{
+			"cache": {
 				Type:     schema.TypeSet,
 				MaxItems: 1,
 				Optional: true,
@@ -124,7 +124,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 							Required: true,
 							ForceNew: false,
 						},
-						"controls": &schema.Schema{
+						"controls": {
 							Type:     schema.TypeSet,
 							Required: true,
 							Elem: &schema.Resource{
@@ -165,7 +165,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 	}
 }
 
-func resourceQiniuCdnDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceQiniuCdnDomainRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	conn := m.(Client).domainconn
 	domainName := d.Id()
@@ -267,12 +267,15 @@ func resourceQiniuCdnDomainDelete(ctx context.Context, d *schema.ResourceData, m
 	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
 		res, err := conn.DescribeDomain(domainName)
 
-		if res.OperationType == "delete_domain" && res.OperatingState == "processing" {
-			return resource.RetryableError(fmt.Errorf("domain creation is processing"))
+		if err != nil {
+			if err.Error() == "无此域名" {
+				return nil
+			}
+			return resource.NonRetryableError(err)
 		}
 
-		if err != nil && err.Error() == "无此域名" {
-			return nil
+		if res.OperationType == "delete_domain" && res.OperatingState == "processing" {
+			return resource.RetryableError(fmt.Errorf("domain creation is processing"))
 		}
 
 		return resource.NonRetryableError(fmt.Errorf("error describing domain: unkown state"))
