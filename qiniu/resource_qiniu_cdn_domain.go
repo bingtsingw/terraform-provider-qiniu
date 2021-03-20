@@ -57,15 +57,15 @@ func resourceQiniuCdnDomain() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"cert_id": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"force": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Required: true,
 						},
 						"http2": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Required: true,
 						},
 					},
 				},
@@ -194,7 +194,12 @@ func resourceQiniuCdnDomainCreate(ctx context.Context, d *schema.ResourceData, m
 
 	if protocol, ok := d.GetOk("protocol"); ok {
 		if protocol == "https" {
-			input.Https = d.Get("https").(domain.DomainHttpsInfo)
+			https := d.Get("https").(*schema.Set).List()
+			if len(https) != 1 {
+				return diag.FromErr(fmt.Errorf("when protocol is 'https', https block must be set"))
+			}
+
+			input.Https = convertInputDomainHttps(https)
 		}
 	}
 
@@ -276,6 +281,18 @@ func resourceQiniuCdnDomainDelete(ctx context.Context, d *schema.ResourceData, m
 	d.SetId("")
 
 	return diags
+}
+
+func convertInputDomainHttps(hh []interface{}) domain.DomainHttpsInfo {
+	h := hh[0].(map[string]interface{})
+
+	https := domain.DomainHttpsInfo{
+		CertID:      h["cert_id"].(string),
+		ForceHttps:  h["force"].(bool),
+		Http2Enable: h["http2"].(bool),
+	}
+
+	return https
 }
 
 func convertInputDomainSource(ss []interface{}) domain.DomainSourceInfo {

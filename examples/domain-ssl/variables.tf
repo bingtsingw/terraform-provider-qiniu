@@ -11,9 +11,11 @@ variable "geo_cover" {
 }
 
 variable "protocol" {
-  default = "http"
+  default = "https"
 }
 
 variable "qiniu_bucket" {}
+
+variable "cert_id" {}
 
 variable "domain_name" {}
