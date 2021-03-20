@@ -158,6 +158,10 @@ func resourceQiniuCdnDomain() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
+		},
 	}
 }
 
@@ -213,7 +217,7 @@ func resourceQiniuCdnDomainCreate(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	err = resource.RetryContext(ctx, 5*time.Minute, func() *resource.RetryError {
+	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
 		res, err := conn.DescribeDomain(domainName)
 
 		if err != nil {
@@ -260,7 +264,7 @@ func resourceQiniuCdnDomainDelete(ctx context.Context, d *schema.ResourceData, m
 
 	err = conn.DeleteDomain(domainName)
 
-	err = resource.RetryContext(ctx, 5*time.Minute, func() *resource.RetryError {
+	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
 		res, err := conn.DescribeDomain(domainName)
 
 		if res.OperationType == "delete_domain" && res.OperatingState == "processing" {
