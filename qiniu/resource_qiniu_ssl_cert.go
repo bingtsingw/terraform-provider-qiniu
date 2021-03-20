@@ -23,14 +23,29 @@ func resourceQiniuSslCert() *schema.Resource {
 				ForceNew: true,
 			},
 			"pri": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				ForceNew:  true,
+				Sensitive: true,
 			},
 			"ca": {
+				Type:      schema.TypeString,
+				Required:  true,
+				ForceNew:  true,
+				Sensitive: true,
+			},
+			"common_name": {
 				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Optional: true,
+				Computed: true,
+			},
+			"dns_names": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 	}
@@ -68,6 +83,22 @@ func resourceQiniuSslCertRead(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	if err := d.Set("name", c.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("common_name", c.CommonName); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("dns_names", c.DnsNames); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("pri", c.Pri); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("ca", c.Ca); err != nil {
 		return diag.FromErr(err)
 	}
 
