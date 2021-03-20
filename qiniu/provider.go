@@ -24,7 +24,8 @@ func Provider() *schema.Provider {
 			"qiniu_kodo_buckets": dataSourceQiniuKodoBuckets(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"qiniu_ssl_cert": resourceQiniuSslCert(),
+			"qiniu_ssl_cert":   resourceQiniuSslCert(),
+			"qiniu_cdn_domain": resourceQiniuCdnDomain(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

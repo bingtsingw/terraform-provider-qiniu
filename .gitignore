@@ -7,3 +7,4 @@ bin/
 .terraform.lock.hcl
 terraform.tfplan
 terraform.tfstate*
+terraform.tfvars
