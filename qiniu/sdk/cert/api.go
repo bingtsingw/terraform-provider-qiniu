@@ -11,12 +11,6 @@ var (
 	ApiHost = "https://api.qiniu.com"
 )
 
-type CertBody struct {
-	Name string
-	Ca   string
-	Pri  string
-}
-
 type CertInfo struct {
 	Id         string   `json:"certid"`
 	Name       string   `json:"name"`
@@ -24,11 +18,6 @@ type CertInfo struct {
 	DnsNames   []string `json:"dnsnames"`
 	Pri        string   `json:"pri"`
 	Ca         string   `json:"ca"`
-}
-
-type CertsInfo struct {
-	Marker string     `json:"marker"`
-	Certs  []CertInfo `json:"certs"`
 }
 
 type CertManager struct {
@@ -54,10 +43,32 @@ func (m *CertManager) GetCertInfo(id string) (certInfo CertInfo, err error) {
 	return
 }
 
-func (m *CertManager) GetCertsInfo() (certsInfo CertsInfo, err error) {
-	reqURL := fmt.Sprintf("%s/sslcert?marker=0&limit=100", ApiHost)
-	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, &certsInfo, "GET", reqURL, nil, nil)
-	return
+func (m *CertManager) GetCertsInfo() (certsInfo []CertInfo, err error) {
+	type Response struct {
+		Marker string     `json:"marker"`
+		Certs  []CertInfo `json:"certs"`
+	}
+
+	marker := ""
+
+	for {
+		response := Response{}
+		reqURL := fmt.Sprintf("%s/sslcert?marker=%s&limit=100", ApiHost, marker)
+		err = m.Client.CredentialedCall(context.Background(), m.Mac, auth.TokenQiniu, &response, "GET", reqURL, nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if response.Marker == "" {
+			break
+		}
+
+		marker = response.Marker
+		certsInfo = append(certsInfo, response.Certs...)
+	}
+
+	return certsInfo, err
 }
 
 func (m *CertManager) DeleteCert(id string) (err error) {
@@ -66,7 +77,7 @@ func (m *CertManager) DeleteCert(id string) (err error) {
 	return
 }
 
-func (m *CertManager) CreateCert(body CertBody) (certInfo CertInfo, err error) {
+func (m *CertManager) CreateCert(body CertInfo) (certInfo CertInfo, err error) {
 	reqURL := fmt.Sprintf("%s/sslcert", ApiHost)
 	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, &certInfo, "POST", reqURL, nil, body)
 	return

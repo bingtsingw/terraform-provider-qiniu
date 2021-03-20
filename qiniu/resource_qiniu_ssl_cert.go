@@ -40,7 +40,7 @@ func resourceQiniuSslCertCreate(ctx context.Context, d *schema.ResourceData, m i
 	var diags diag.Diagnostics
 	conn := m.(Client).certconn
 
-	c, err := conn.CreateCert(cert.CertBody{
+	c, err := conn.CreateCert(cert.CertInfo{
 		Name: d.Get("name").(string),
 		Pri:  d.Get("pri").(string),
 		Ca:   d.Get("ca").(string),
