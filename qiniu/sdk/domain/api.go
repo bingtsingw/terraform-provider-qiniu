@@ -131,3 +131,15 @@ func (m *DomainManager) DeleteDomain(domain string) (err error) {
 	err = m.Client.CredentialedCall(context.Background(), m.Mac, auth.TokenQiniu, nil, "DELETE", reqURL, nil)
 	return err
 }
+
+func (m *DomainManager) UnsslizeDomain(domain string) (err error) {
+	reqURL := fmt.Sprintf("%s/domain/%s/unsslize", ApiHost, domain)
+	err = m.Client.CredentialedCall(context.Background(), m.Mac, auth.TokenQiniu, nil, "PUT", reqURL, nil)
+	return err
+}
+
+func (m *DomainManager) SslizeDomain(domain string, body DomainHttpsInfo) (err error) {
+	reqURL := fmt.Sprintf("%s/domain/%s/sslize", ApiHost, domain)
+	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, nil, "PUT", reqURL, nil, body)
+	return err
+}

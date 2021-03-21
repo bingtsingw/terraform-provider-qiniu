@@ -166,6 +166,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
 			Delete: schema.DefaultTimeout(30 * time.Minute),
+			Update: schema.DefaultTimeout(60 * time.Minute),
 		},
 	}
 }
@@ -282,6 +283,71 @@ func resourceQiniuCdnDomainCreate(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceQiniuCdnDomainUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	conn := m.(Client).domainconn
+	domainName := d.Id()
+
+	protocol := d.Get("protocol").(string)
+	if d.HasChange("protocol") {
+		if protocol == "http" {
+			// HTTPS降级为HTTP
+			err := conn.UnsslizeDomain(domainName)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+				res, err := conn.DescribeDomain(domainName)
+
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("[unsslize] error describing domain: %s", err))
+				}
+
+				if res.OperationType == "unsslize" && res.OperatingState == "processing" {
+					return resource.RetryableError(fmt.Errorf("domain unsslize is processing"))
+				}
+
+				if res.OperationType == "unsslize" && res.OperatingState == "success" {
+					return nil
+				}
+
+				return resource.NonRetryableError(fmt.Errorf("[unsslize] error describing domain: unkown state"))
+			})
+
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		} else {
+			// HTTP升级为HTTPS
+			https := convertInputDomainHttps(d.Get("https").(*schema.Set).List())
+			err := conn.SslizeDomain(domainName, https)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+				res, err := conn.DescribeDomain(domainName)
+
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("[sslize] error describing domain: %s", err))
+				}
+
+				if res.OperationType == "sslize" && res.OperatingState == "processing" {
+					return resource.RetryableError(fmt.Errorf("domain sslize is processing"))
+				}
+
+				if res.OperationType == "sslize" && res.OperatingState == "success" {
+					return nil
+				}
+
+				return resource.NonRetryableError(fmt.Errorf("[sslize] error describing domain: unkown state"))
+			})
+
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	return resourceQiniuCdnDomainRead(ctx, d, m)
 }
 
