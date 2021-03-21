@@ -143,3 +143,9 @@ func (m *DomainManager) SslizeDomain(domain string, body DomainHttpsInfo) (err e
 	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, nil, "PUT", reqURL, nil, body)
 	return err
 }
+
+func (m *DomainManager) ModifyDomainHttpsConf(domain string, body DomainHttpsInfo) (err error) {
+	reqURL := fmt.Sprintf("%s/domain/%s/httpsconf", ApiHost, domain)
+	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, nil, "PUT", reqURL, nil, body)
+	return err
+}

@@ -346,6 +346,38 @@ func resourceQiniuCdnDomainUpdate(ctx context.Context, d *schema.ResourceData, m
 				return diag.FromErr(err)
 			}
 		}
+	} else {
+		// 当protocol未改变 && protocol == "https" && https改变
+		// 执行证书更新的逻辑
+		if protocol == "https" && d.HasChange("https") {
+			https := convertInputDomainHttps(d.Get("https").(*schema.Set).List())
+			err := conn.ModifyDomainHttpsConf(domainName, https)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+				res, err := conn.DescribeDomain(domainName)
+
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("[https] error describing domain: %s", err))
+				}
+
+				if res.OperationType == "modify_https_conf" && res.OperatingState == "processing" {
+					return resource.RetryableError(fmt.Errorf("domain https is processing"))
+				}
+
+				if res.OperationType == "modify_https_conf" && res.OperatingState == "success" {
+					return nil
+				}
+
+				return resource.NonRetryableError(fmt.Errorf("[https] error describing domain: unkown state"))
+			})
+
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	return resourceQiniuCdnDomainRead(ctx, d, m)
