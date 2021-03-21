@@ -82,10 +82,11 @@ func resourceQiniuCdnDomain() *schema.Resource {
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"domain", "ip", "qiniuBucket", "advanced"}, false),
 						},
-						"host": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
+						// 后台没有该设置选项, [API](https://developer.qiniu.com/fusion/4249/product-features#2)也不清晰
+						//"host": {
+						//	Type:     schema.TypeString,
+						//	Required: true,
+						//},
 						"ips": {
 							Type:     schema.TypeList,
 							Optional: true,
@@ -306,7 +307,6 @@ func convertInputDomainSource(ss []interface{}) domain.DomainSourceInfo {
 	s := ss[0].(map[string]interface{})
 	source := domain.DomainSourceInfo{
 		Type:        s["type"].(string),
-		Host:        s["host"].(string),
 		IPs:         expandStringList(s["ips"].([]interface{})),
 		Domain:      s["domain"].(string),
 		QiniuBucket: s["qiniu_bucket"].(string),
