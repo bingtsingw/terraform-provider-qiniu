@@ -18,6 +18,9 @@ func resourceQiniuCdnDomain() *schema.Resource {
 		CreateContext: resourceQiniuCdnDomainCreate,
 		UpdateContext: resourceQiniuCdnDomainUpdate,
 		DeleteContext: resourceQiniuCdnDomainDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -110,6 +113,7 @@ func resourceQiniuCdnDomain() *schema.Resource {
 						"test_url_path": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Default:  "qiniu_do_not_delete.gif",
 						},
 					},
 				},
@@ -180,6 +184,36 @@ func resourceQiniuCdnDomainRead(_ context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("type", res.Type); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("platform", res.Platform); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("geo_cover", res.GeoCover); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("protocol", res.Protocol); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("source", flattenResponseDomainSource(res.Source)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("cache", flattenResponseDomainCache(res.Cache)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if res.Protocol == "https" {
+		if err := d.Set("https", flattenResponseDomainHttps(res.Https)); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	return diags
 }
 
@@ -248,9 +282,7 @@ func resourceQiniuCdnDomainCreate(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceQiniuCdnDomainUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	return diags
+	return resourceQiniuCdnDomainRead(ctx, d, m)
 }
 
 func resourceQiniuCdnDomainDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -291,6 +323,16 @@ func resourceQiniuCdnDomainDelete(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
+func flattenResponseDomainHttps(h domain.DomainHttpsInfo) []interface{} {
+	https := map[string]interface{}{
+		"cert_id": h.CertID,
+		"force":   h.ForceHttps,
+		"http2":   h.Http2Enable,
+	}
+
+	return []interface{}{https}
+}
+
 func convertInputDomainHttps(hh []interface{}) domain.DomainHttpsInfo {
 	h := hh[0].(map[string]interface{})
 
@@ -301,6 +343,29 @@ func convertInputDomainHttps(hh []interface{}) domain.DomainHttpsInfo {
 	}
 
 	return https
+}
+
+func flattenResponseDomainSource(s domain.DomainSourceInfo) []interface{} {
+	source := map[string]interface{}{
+		"type":          s.Type,
+		"test_url_path": s.TestURLPath,
+	}
+
+	if s.Type == "qiniuBucket" {
+		source["qiniu_bucket"] = s.QiniuBucket
+	} else {
+		source["url_scheme"] = s.URLScheme
+	}
+
+	if s.Type == "ip" {
+		source["ips"] = s.IPs
+	}
+
+	if s.Type == "domain" {
+		source["domain"] = s.Domain
+	}
+
+	return []interface{}{source}
 }
 
 func convertInputDomainSource(ss []interface{}) domain.DomainSourceInfo {
@@ -315,6 +380,27 @@ func convertInputDomainSource(ss []interface{}) domain.DomainSourceInfo {
 	}
 
 	return source
+}
+
+func flattenResponseDomainCache(c domain.DomainCacheInfo) []interface{} {
+	controls := make([]map[string]interface{}, len(c.CacheControls))
+
+	for i, v := range c.CacheControls {
+		control := map[string]interface{}{
+			"time":     v.Time,
+			"timeunit": v.Timeunit,
+			"type":     v.Type,
+			"rule":     v.Rule,
+		}
+		controls[i] = control
+	}
+
+	cache := map[string]interface{}{
+		"ignore_param": c.IgnoreParam,
+		"controls":     controls,
+	}
+
+	return []interface{}{cache}
 }
 
 func convertInputDomainCache(cc []interface{}) domain.DomainCacheInfo {

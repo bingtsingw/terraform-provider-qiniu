@@ -18,6 +18,8 @@ Feel free to submit issues or pull requests, Chinese language is accepted, : )
 - [x] add cert curd
 - [x] add readme
 - [ ] add cdn crud
+  - [x] domain import
+  - [ ] domain update
 - [ ] project management or roadmap
 - [ ] add docs
 - [ ] add tests
