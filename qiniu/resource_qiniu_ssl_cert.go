@@ -51,7 +51,7 @@ func resourceQiniuSslCert() *schema.Resource {
 	}
 }
 
-func resourceQiniuSslCertRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceQiniuSslCertRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	conn := m.(Client).certconn
 
@@ -105,7 +105,7 @@ func resourceQiniuSslCertCreate(ctx context.Context, d *schema.ResourceData, m i
 	return diags
 }
 
-func resourceQiniuSslCertDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceQiniuSslCertDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	conn := m.(Client).certconn
 

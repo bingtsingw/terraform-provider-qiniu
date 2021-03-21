@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/qiniu/go-sdk/v7/storage"
 	"strconv"
 	"time"
@@ -16,7 +17,7 @@ func dataSourceQiniuKodoBuckets() *schema.Resource {
 			"region_id": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validateRegionID,
+				ValidateFunc: validation.StringInSlice([]string{"z0", "z1", "z2", "na0", "as0"}, false),
 				ForceNew:     true,
 			},
 			"buckets": {
@@ -51,7 +52,7 @@ func dataSourceQiniuKodoBuckets() *schema.Resource {
 	}
 }
 
-func dataSourceQiniuKodoBucketsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceQiniuKodoBucketsRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	conn := meta.(Client).bucketconn
