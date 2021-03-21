@@ -9,8 +9,8 @@ import (
 
 func resourceQiniuSslCert() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceQiniuSslCertCreate,
 		ReadContext:   resourceQiniuSslCertRead,
+		CreateContext: resourceQiniuSslCertCreate,
 		DeleteContext: resourceQiniuSslCertDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -51,27 +51,6 @@ func resourceQiniuSslCert() *schema.Resource {
 	}
 }
 
-func resourceQiniuSslCertCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	var diags diag.Diagnostics
-	conn := m.(Client).certconn
-
-	c, err := conn.CreateCert(cert.CertInfo{
-		Name: d.Get("name").(string),
-		Pri:  d.Get("pri").(string),
-		Ca:   d.Get("ca").(string),
-	})
-
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(c.Id)
-
-	diags = resourceQiniuSslCertRead(ctx, d, m)
-
-	return diags
-}
-
 func resourceQiniuSslCertRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	conn := m.(Client).certconn
@@ -101,6 +80,27 @@ func resourceQiniuSslCertRead(ctx context.Context, d *schema.ResourceData, m int
 	if err := d.Set("ca", c.Ca); err != nil {
 		return diag.FromErr(err)
 	}
+
+	return diags
+}
+
+func resourceQiniuSslCertCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+	conn := m.(Client).certconn
+
+	c, err := conn.CreateCert(cert.CertInfo{
+		Name: d.Get("name").(string),
+		Pri:  d.Get("pri").(string),
+		Ca:   d.Get("ca").(string),
+	})
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(c.Id)
+
+	diags = resourceQiniuSslCertRead(ctx, d, m)
 
 	return diags
 }
