@@ -21,3 +21,7 @@ resource "qiniu_cdn_domain" "test" {
     }
   }
 }
+
+output "test" {
+  value = qiniu_cdn_domain.test.cname
+}

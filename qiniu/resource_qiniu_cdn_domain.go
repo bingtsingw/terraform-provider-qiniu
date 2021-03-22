@@ -28,6 +28,10 @@ func resourceQiniuCdnDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"cname": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
@@ -182,6 +186,10 @@ func resourceQiniuCdnDomainRead(_ context.Context, d *schema.ResourceData, m int
 	}
 
 	if err := d.Set("name", res.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("cname", res.CName); err != nil {
 		return diag.FromErr(err)
 	}
 
