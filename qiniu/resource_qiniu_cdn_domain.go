@@ -388,6 +388,36 @@ func resourceQiniuCdnDomainUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
+	if d.HasChange("cache") {
+		cache := convertInputDomainCache(d.Get("cache").(*schema.Set).List())
+		err := conn.ModifyDomainCache(domainName, cache)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+			res, err := conn.DescribeDomain(domainName)
+
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("[cache] error describing domain: %s", err))
+			}
+
+			if res.OperationType == "modify_cache" && res.OperatingState == "processing" {
+				return resource.RetryableError(fmt.Errorf("domain cache is processing"))
+			}
+
+			if res.OperationType == "modify_cache" && res.OperatingState == "success" {
+				return nil
+			}
+
+			return resource.NonRetryableError(fmt.Errorf("[cache] error describing domain: unkown state"))
+		})
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	return resourceQiniuCdnDomainRead(ctx, d, m)
 }
 

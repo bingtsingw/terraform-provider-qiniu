@@ -149,3 +149,9 @@ func (m *DomainManager) ModifyDomainHttpsConf(domain string, body DomainHttpsInf
 	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, nil, "PUT", reqURL, nil, body)
 	return err
 }
+
+func (m *DomainManager) ModifyDomainCache(domain string, body DomainCacheInfo) (err error) {
+	reqURL := fmt.Sprintf("%s/domain/%s/cache", ApiHost, domain)
+	err = m.Client.CredentialedCallWithJson(context.Background(), m.Mac, auth.TokenQiniu, nil, "PUT", reqURL, nil, body)
+	return err
+}
